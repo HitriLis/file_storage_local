@@ -1,0 +1,10 @@
+.env
+.idea
+__pycache__/
+static
+media
+celerybeat-schedule
+celerybeat-schedule.*
+venv
+.venv
+_build/
