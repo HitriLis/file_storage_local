@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from config.container import Container
 from interfaces.api.v1 import api_router
 
 # Создаем приложение
@@ -20,6 +20,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+container = Container()
+container.wire(modules=[
+    "interfaces.api.v1.routers.auth",
+])
 
 app.include_router(api_router, prefix="/api/v1")
 
