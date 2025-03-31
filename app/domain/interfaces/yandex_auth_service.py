@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
-
 from application.dto.yandex_dto import YandexTokenDTO, YandexUserResponseDTO
 
 
 class IYandexAuthService(ABC):
+
     @property
     @abstractmethod
     def get_auth_url(self) -> str:

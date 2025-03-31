@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 class YandexUserResponseDTO(BaseModel):
     email: str
-    login: Optional[str] = None
+    username: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     number: Optional[str] = None

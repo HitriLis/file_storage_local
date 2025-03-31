@@ -14,6 +14,7 @@ class Users(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True
     )
     username: Mapped[str] = mapped_column(sa.String, nullable=True)
+    email: Mapped[str] = mapped_column(sa.String, unique=True,   nullable=False, index=True)
     first_name: Mapped[str] = mapped_column(sa.String, nullable=True)
     last_name: Mapped[str] = mapped_column(sa.String, nullable=True)
     is_admin: Mapped[bool] = mapped_column(sa.Boolean, default=False, nullable=False)
@@ -22,4 +23,4 @@ class Users(Base):
     )
 
     def __repr__(self) -> str:
-        return f"Username:[{self.username!r}]"
+        return f"User:[{self.email!r}]"

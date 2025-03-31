@@ -49,12 +49,12 @@ class YandexAuthService(IYandexAuthService):
             data = response.json()
             email = data.get('default_email')
             login = data.get('login')
-            first_name = data.get('last_name')
-            last_name = data.get('default_email')
+            first_name = data.get('first_name')
+            last_name = data.get('last_name')
             number = data.get('number')
             return YandexUserResponseDTO(
                 email=email,
-                login=login,
+                username=login,
                 first_name=first_name,
                 last_name=last_name,
                 number=number

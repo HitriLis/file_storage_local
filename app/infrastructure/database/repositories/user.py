@@ -1,83 +1,114 @@
-from decimal import Decimal
+from typing import Optional, Tuple, List, Dict
+from uuid import UUID
 from sqlalchemy.future import select
-from sqlalchemy import delete
+from sqlalchemy.sql import exists
+from sqlalchemy import delete, update, insert
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Optional, Tuple
-
-from domain.exceptions.base import NegativeBalanceError
 from domain.models.users import User
-from domain.repositories.user_repository import IUserRepository
+from domain.repositories.user import IUserRepository
 from ..models.users import Users as UserModel
 
 
 class SQLAlchemyUserRepository(IUserRepository):
 
-    async def get_or_create(self, session: AsyncSession, chat_id: int, defaults: dict = None) -> Tuple[User, bool]:
-        if defaults is None:
-            defaults = {}
-        user = await self.get_by_chat_id(session, chat_id=chat_id)
-        create = False
-        if not user:
-            create = True
-            user_model = UserModel(chat_id=chat_id, **defaults)
-            session.add(user_model)
-            await session.commit()
-            await session.refresh(user_model)
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def get_by_email(self, email: str) -> Optional[User]:
+        async with self._session as session:
+            stmt = select(UserModel).where(UserModel.email == email)
+            result = await session.execute(stmt)
+            user_model = result.scalar_one_or_none()
+            if user_model:
+                return User(
+                    uid=user_model.uid,
+                    username=user_model.username,
+                    email=user_model.email,
+                    first_name=user_model.first_name,
+                    last_name=user_model.last_name,
+                )
+            return None
+
+    async def get_by_uid(self, uid: UUID) -> Optional[User]:
+        async with self._session as session:
+            stmt = select(UserModel).where(UserModel.uid == uid)
+            result = await session.execute(stmt)
+            user_model = result.scalar_one_or_none()
+            if user_model:
+                return User(
+                    uid=user_model.uid,
+                    username=user_model.username,
+                    email=user_model.email,
+                    first_name=user_model.first_name,
+                    last_name=user_model.last_name,
+                )
+            return None
+
+    async def exist_username(self, username: str) -> bool:
+        async with self._session as session:
+            result = await session.execute(
+                select(exists().where(UserModel.username == username))
+            )
+            return result.scalar()
+
+    async def get_list_user(self) -> List[User]:
+        """Получает список всех пользователей."""
+        async with self._session as session:
+            stmt = select(UserModel)
+            result = await session.execute(stmt)
+            users = result.scalars().all()
+            return [
+                User(
+                    uid=user.uid,
+                    username=user.username,
+                    email=user.email,
+                    first_name=user.first_name,
+                    last_name=user.last_name,
+                ) for user in users
+            ]
+
+    async def get_or_create(self, defaults: Dict = None) -> Tuple[User, bool]:
+        async with self._session as session:
+            if defaults is None:
+                defaults = {}
+            email = defaults.get("email")
+            if not email:
+                raise ValueError("Email is required for get_or_create")
+
+            user = await self.get_by_email(email)
+            if user:
+                return user, False
+
+            stmt = insert(UserModel).values(**defaults).returning(UserModel)
+            result = await session.execute(stmt)
+            user_model = result.scalar_one()
             user = User(
-                id=user_model.id,
-                chat_id=user_model.chat_id,
+                uid=user_model.uid,
                 username=user_model.username,
+                email=user_model.email,
                 first_name=user_model.first_name,
                 last_name=user_model.last_name,
-                balance=user_model.balance,
-                created_at=user_model.created_at,
             )
-        return user, create
-
-    async def get_by_chat_id(self, session: AsyncSession, chat_id: int) -> Optional[User]:
-        result = await session.execute(
-            select(UserModel).where(UserModel.chat_id == chat_id)
-        )
-        user_model = result.scalars().first()
-        if user_model:
-            return User(
-                id=user_model.id,
-                chat_id=user_model.chat_id,
-                username=user_model.username,
-                first_name=user_model.first_name,
-                last_name=user_model.last_name,
-                balance=user_model.balance,
-                created_at=user_model.created_at
-            )
-        return None
-
-    async def delete_user(self, session: AsyncSession, item_id: int) -> None:
-        await session.execute(
-            delete(UserModel)
-            .where(UserModel.id == item_id)
-        )
-        await session.commit()
-
-    async def update_balance_user(self, session: AsyncSession, user_id: int, value: Decimal) -> Optional[User]:
-        result = await session.execute(
-            select(UserModel).where(UserModel.id == user_id)
-        )
-        user_model = result.scalars().first()
-        if user_model:
-            new_balance = user_model.balance + value
-            if new_balance < 0:
-                await session.rollback()
-                raise NegativeBalanceError("Недостаточно средств для списания.")
-            user_model.balance = new_balance
             await session.commit()
-            await session.refresh(user_model)
-            return User(
-                id=user_model.id,
-                chat_id=user_model.chat_id,
+            return user, True
+
+    async def delete_user(self, uid: UUID) -> None:
+        async with self._session as session:
+            stmt = delete(UserModel).where(UserModel.uid == uid.bytes)
+            await session.execute(stmt)
+            await session.commit()
+
+    async def update_user(self, uid: UUID, update_data: Dict) -> Optional[User]:
+        async with self._session as session:
+            stmt = update(UserModel).where(UserModel.uid == uid).values(**update_data).returning(UserModel)
+            result = await session.execute(stmt)
+            user_model = result.scalar_one_or_none()
+            response = User(
+                uid=user_model.uid,
                 username=user_model.username,
+                email=user_model.email,
                 first_name=user_model.first_name,
-                last_name=user_model.last_name,
-                balance=user_model.balance,
-                created_at=user_model.created_at
-            )
-        return None
+                last_name=user_model.last_name
+            ) if user_model else None
+            await session.commit()
+            return response

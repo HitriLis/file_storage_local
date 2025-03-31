@@ -31,7 +31,7 @@ class AuthTokenService:
         payload.update({"exp": expire})
         return jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
 
-    def _decode_token(self, token: str) -> dict:
+    def decode_token(self, token: str) -> dict:
         try:
 
             payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
@@ -49,7 +49,7 @@ class AuthTokenService:
         Создает JWT refresh-токен с длительным сроком действия.
         """
         try:
-            data = {"sub": data.uid}
+            data = {"sub": str(data.uid)}
             access_token = self._create_access_token(data)
             # Опционально: создаем новый refresh-токен для ротации
             refresh_token = self._create_refresh_token(data)
@@ -67,10 +67,10 @@ class AuthTokenService:
         Обновляет access-токен на основе refresh-токена.
         """
 
-        payload = self._decode_token(refresh_token)
+        payload = self.decode_token(refresh_token)
         sub = payload.get("sub")
         # Создаем новый access-токен
-        new_access_token = self._create_access_token(data={"sub": sub})
+        new_access_token = self._create_access_token({"sub": sub})
         return TokenRefreshResponseDTO(
             access_token=new_access_token,
             token_type="Bearer"

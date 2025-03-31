@@ -1,4 +1,7 @@
 from dependency_injector import containers, providers
+
+from .containers.database import DatabaseContainer
+from .containers.repository import RepositoryContainer
 from .containers.services import ServicesContainer
 from .containers.use_cases import UseCasesContainer
 from .settings import settings
@@ -15,12 +18,29 @@ class Container(containers.DeclarativeContainer):
         "ACCESS_TOKEN_EXPIRE_MINUTES": int(settings.ACCESS_TOKEN_EXPIRE_MINUTES),
         "REFRESH_TOKEN_EXPIRE_DAYS": int(settings.REFRESH_TOKEN_EXPIRE_DAYS)
     })
-    config_db = providers.Object(db_settings)
+
+    config_db = providers.Configuration(default={
+        "POOL_SIZE": db_settings.POOL_SIZE,
+        "ECHO_SQL": db_settings.ECHO_SQL,
+        "DB_URL": db_settings.db_url,
+    })
+
+    database = providers.Container(
+        DatabaseContainer,
+        config=config_db
+    )
+    repository = providers.Container(
+        RepositoryContainer,
+        database=database
+    )
+
     services = providers.Container(
         ServicesContainer,
-        config=config
+        config=config,
+        repository=repository
     )
     use_cases = providers.Container(
         UseCasesContainer,
         services=services,
+        repository=repository
     )
