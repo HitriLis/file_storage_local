@@ -2,7 +2,7 @@ from typing import Optional, Tuple, List, Dict
 from uuid import UUID
 from sqlalchemy.future import select
 from sqlalchemy.sql import exists
-from sqlalchemy import delete, update, insert
+from sqlalchemy import delete, update, insert, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from domain.models.users import User
 from domain.repositories.user import IUserRepository
@@ -13,6 +13,26 @@ class SQLAlchemyUserRepository(IUserRepository):
 
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
+
+    async def users_list(self, offset: int, limit: int) -> Tuple[int, List[User]]:
+        async with self._session as session:
+            stmt = select(UserModel)
+            count_result_query = select(func.count()).select_from(UserModel)
+            count_result = await session.execute(count_result_query)
+            total_count = count_result.scalar()
+            result = await session.execute(
+                stmt.limit(limit).offset(offset)
+            )
+            users = result.scalars().all()
+            return total_count, [
+                User(
+                    uid=user.uid,
+                    username=user.username,
+                    email=user.email,
+                    first_name=user.first_name,
+                    last_name=user.last_name,
+                    is_admin=user.is_admin
+                ) for user in users]
 
     async def get_by_email(self, email: str) -> Optional[User]:
         async with self._session as session:
@@ -26,6 +46,7 @@ class SQLAlchemyUserRepository(IUserRepository):
                     email=user_model.email,
                     first_name=user_model.first_name,
                     last_name=user_model.last_name,
+                    is_admin=user_model.is_admin
                 )
             return None
 
@@ -41,6 +62,7 @@ class SQLAlchemyUserRepository(IUserRepository):
                     email=user_model.email,
                     first_name=user_model.first_name,
                     last_name=user_model.last_name,
+                    is_admin=user_model.is_admin
                 )
             return None
 
@@ -51,21 +73,12 @@ class SQLAlchemyUserRepository(IUserRepository):
             )
             return result.scalar()
 
-    async def get_list_user(self) -> List[User]:
-        """Получает список всех пользователей."""
+    async def exist_user(self, uid: UUID) -> bool:
         async with self._session as session:
-            stmt = select(UserModel)
-            result = await session.execute(stmt)
-            users = result.scalars().all()
-            return [
-                User(
-                    uid=user.uid,
-                    username=user.username,
-                    email=user.email,
-                    first_name=user.first_name,
-                    last_name=user.last_name,
-                ) for user in users
-            ]
+            result = await session.execute(
+                select(exists().where(UserModel.uid == uid))
+            )
+            return result.scalar()
 
     async def get_or_create(self, defaults: Dict = None) -> Tuple[User, bool]:
         async with self._session as session:
@@ -88,6 +101,7 @@ class SQLAlchemyUserRepository(IUserRepository):
                 email=user_model.email,
                 first_name=user_model.first_name,
                 last_name=user_model.last_name,
+                is_admin=user_model.is_admin
             )
             await session.commit()
             return user, True
@@ -108,7 +122,8 @@ class SQLAlchemyUserRepository(IUserRepository):
                 username=user_model.username,
                 email=user_model.email,
                 first_name=user_model.first_name,
-                last_name=user_model.last_name
+                last_name=user_model.last_name,
+                is_admin=user_model.is_admin
             ) if user_model else None
             await session.commit()
             return response

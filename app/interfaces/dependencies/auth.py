@@ -3,6 +3,7 @@ from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from config.container import Container
 from application.services.auth_service import AuthTokenService
+from domain.models.users import User
 from domain.repositories.user import IUserRepository
 security = HTTPBearer()
 
@@ -19,7 +20,7 @@ async def get_current_user(
     try:
         payload = auth_service.decode_token(token)
         uid = payload.pop('sub')
-        user = await user_repo.get_by_uid(uid)
+        user: User = await user_repo.get_by_uid(uid)
         if user is None:
             raise HTTPException(status_code=401, detail="Invalid token")
         request.state.user = user
