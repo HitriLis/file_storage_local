@@ -21,6 +21,7 @@ services:
         EXTENSIONS_FILE: ${EXTENSIONS_FILE}
     volumes:
        - ./app:/app
+       - ./media:/media
     depends_on:
       - psql
     restart: unless-stopped
