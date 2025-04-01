@@ -17,6 +17,8 @@ services:
         YANDEX_CLIENT_ID: ${YANDEX_CLIENT_ID}
         YANDEX_CLIENT_SECRET: ${YANDEX_CLIENT_SECRET}
         YANDEX_REDIRECT_URI: ${YANDEX_REDIRECT_URI}
+        UPLOAD_DIR: ${UPLOAD_DIR}
+        EXTENSIONS_FILE: ${EXTENSIONS_FILE}
     volumes:
        - ./app:/app
     depends_on:

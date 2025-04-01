@@ -17,7 +17,7 @@ router = APIRouter(
 @inject
 async def profile(
         request: Request,
-        user_service: UserService = Depends(Provide[Container.services.user_service]),
+        user_service: UserService = Depends(Provide[Container.services.user_service])
 ):
     user = request.state.user
     profile_user = await user_service.get_profile(user.uid)
@@ -29,7 +29,7 @@ async def profile(
 async def update_profile(
         request: Request,
         data: UserUpdateDTO,
-        user_service: UserService = Depends(Provide[Container.services.user_service]),
+        user_service: UserService = Depends(Provide[Container.services.user_service])
 ):
     user = request.state.user
     try:

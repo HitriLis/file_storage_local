@@ -1,5 +1,5 @@
 from uuid import UUID
-
+from typing import Optional
 from application.dto.base import PaginatedResult
 from application.dto.user_dto import UserProfileDTO, UserUpdateDTO
 from domain.exceptions.base import NotFoundError, BadRequestError
@@ -22,7 +22,7 @@ class UserService:
             raise NotFoundError("User does not")
         await self._user_repo.delete_user(uid)
 
-    async def get_user(self, uid: UUID) -> UserProfileDTO:
+    async def get_user(self, uid: UUID) -> Optional[UserProfileDTO]:
         user = await self._user_repo.get_by_uid(uid)
         if not user:
             raise NotFoundError("User does not")

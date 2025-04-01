@@ -18,7 +18,8 @@ class Settings(
     Yandex,
     JWT
 ):
-    ...
+    UPLOAD_DIR: str
+    EXTENSIONS_FILE: str
 
 
 settings = Settings()

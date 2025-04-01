@@ -13,25 +13,25 @@ from interfaces.dependencies.permissions import admin_permission
 from interfaces.filters.base import BasePaginationParams
 
 router = APIRouter(
-    dependencies=[Depends(get_current_user)]
+    dependencies=[Depends(get_current_user), Depends(admin_permission)]
 )
 
 
 @router.get("/users", response_model=PaginatedResult[UserProfileDTO])
 @inject
-async def get_user(
+async def get_users(
         params: BasePaginationParams = Depends(),
-        user_service: UserService = Depends(Provide[Container.services.user_service]),
+        user_service: UserService = Depends(Provide[Container.services.user_service])
 ):
-    profile_user = await user_service.get_list_users(params)
-    return profile_user
+    user = await user_service.get_list_users(params)
+    return user
 
 
 @router.get("/users/{uid}", response_model=UserProfileDTO)
 @inject
 async def get_user(
         uid: UUID,
-        user_service: UserService = Depends(Provide[Container.services.user_service]),
+        user_service: UserService = Depends(Provide[Container.services.user_service])
 ):
     try:
         user = await user_service.get_user(uid)
@@ -40,11 +40,11 @@ async def get_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
-@router.delete("/users/{uid}", response_model=UserProfileDTO)
+@router.delete("/users/{uid}", status_code=status.HTTP_204_NO_CONTENT)
 @inject
 async def delete_user(
         uid: UUID,
-        user_service: UserService = Depends(Provide[Container.services.user_service]),
+        user_service: UserService = Depends(Provide[Container.services.user_service])
 ):
     try:
         await user_service.delete_user(uid)

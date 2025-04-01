@@ -16,7 +16,9 @@ class Container(containers.DeclarativeContainer):
         "SECRET_KEY": settings.SECRET_KEY,
         "ALGORITHM": settings.ALGORITHM,
         "ACCESS_TOKEN_EXPIRE_MINUTES": int(settings.ACCESS_TOKEN_EXPIRE_MINUTES),
-        "REFRESH_TOKEN_EXPIRE_DAYS": int(settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        "REFRESH_TOKEN_EXPIRE_DAYS": int(settings.REFRESH_TOKEN_EXPIRE_DAYS),
+        "UPLOAD_DIR": settings.UPLOAD_DIR,
+        "EXTENSIONS_FILE": settings.EXTENSIONS_FILE
     })
 
     config_db = providers.Configuration(default={

@@ -26,7 +26,8 @@ container.wire(modules=[
     "interfaces.dependencies.auth",
     "interfaces.api.v1.routers.auth",
     "interfaces.api.v1.routers.user",
-    "interfaces.api.v1.routers.administrator"
+    "interfaces.api.v1.routers.administrator",
+    "interfaces.api.v1.routers.file"
 ])
 
 app.include_router(api_router, prefix="/api/v1")
